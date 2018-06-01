@@ -11,6 +11,7 @@
 	constant1: .float 0.0
 	constant2: .float 1.0
 	constant3: .float 3.0
+	constant4: .float 2.0
 	
 	result1: .asciiz "A raiz cubica é "
 	result2: .asciiz ". O erro estimado eh de "
@@ -26,6 +27,7 @@ main:
 	jal check_float
 	jal calc_raiz
 	jal imprime_saida
+	jal exit_prog
 	
 	
 check_float:
@@ -69,22 +71,26 @@ calc_raiz:
 	# the reverse of cubic root is N ^ (1/3)
 	# 1/3 is constant
 		
-	l.s $f4, constant2 # 1.0
-	l.s $f5, constant3 # 3.0
-	lwc1 $f0, numb
-	l.s $f6, constant1 # i = 0
-	
-	div.s $f3, $f4, $f5 # e = 1.0/3.0
+	l.s $f4, constant2 # 1.0 constant
+	l.s $f5, constant3 # 3.0 constant
+	lwc1 $f0, numb #imput number
+	l.s $f6, constant1 # i = 1 count
+	l.s $f3, constant4
 	
 	# for i = 0; i <= f3; i++
-		
+	# 	x = (2x + n/(x^2)/3)
 		loop_exp:
-		#mul.s $f0, $f0, $f3 # return numb = return numb *  f3
-		#add.s $f6, $f6, $f4 # i++
-		#c.le.s $f6, $f5 # i <= 3 ? i++
-		#bc1t loop_exp
+		mul.s $f1, $f0, $f0  # return numb = return numb * numb
+		mul.s $f3, $f0,  $f3 # 2 * numb
+		div.s $f8, $f4, $f1 # n/ x^2
+		add.s $f8, $f3, $f8
+		div.s $f8, $f8,$f5
 		
-		#not solved
+		div.s $f2, $f4, $f6 # exp div = 1/3
+		add.s $f6, $f6, $f6 # i ++
+		c.lt.s $f6, $f5 # check if i <= 3
+		bc1f loop_exp # if count <= 3 return loop
+		
 		
 	s.s $f0, result_numb
 	
@@ -124,5 +130,3 @@ imprime_saida:
 exit_prog:
 	li $v0, 10
 	syscall # exit program
-
-
