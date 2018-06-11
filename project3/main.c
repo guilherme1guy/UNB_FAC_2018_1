@@ -49,14 +49,14 @@ double cubic_root(double d){
     }
 
   
-
-    for (int i = 0; i < iterations; i++){
+    int max_loops = 100;
+    while (calc_error(root_approx, d) > 0.000000000001 && max_loops > 0){
         
         root_approx = (lower_limit + upper_limit) / 2;
 
         cubic_root_approx = cubic_power(root_approx);
 
-        printf("\nLower limit: %lf ;; Upper limit: %lf ;; root_approx: %lf ;; Cubic root_approx: %lf;; Error: %lf", lower_limit, upper_limit, root_approx, cubic_root_approx, calc_error(d, cubic_root_approx));
+        printf("\nLower limit: %f ;; Upper limit: %f ;; root_approx: %f ;; Cubic root_approx: %f;; Error: %f", lower_limit, upper_limit, root_approx, cubic_root_approx, calc_error(d, cubic_root_approx));
 
         if (cubic_root_approx < d){
 
@@ -68,7 +68,7 @@ double cubic_root(double d){
        
         }
 
-
+        max_loops--;
     }
 
     return root_approx;
@@ -83,12 +83,10 @@ int main(){
     printf("double: ");
     scanf("%lf", &d);
 
-    printf("\n\nTest value: %lf ;; Real cubic root: %lf \n\n", d, cbrt(d));
-
-
     double root = cubic_root(d);
     double error = calc_error(d, root);
 
-    printf("\n\nResult: %lf ;; Error: %lf\n", root, error);
+    printf("\n\nResult: %lf ;; Error: %lf", root, error);
+    printf("\nValue: %lf ;; Real cubic root (C math.h): %lf \n\n", d, cbrt(d));
 
 }

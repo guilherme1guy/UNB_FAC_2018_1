@@ -7,20 +7,21 @@
 	numb: .double 0.0  #the value
 	result_numb: .double 0.0 # the cubic root of 'numb'
 	
-	step: .double 0.001f
+	step: .double 0.0001
 
 	lower_limit: .double 0.0
-	lower_limit_cubed: .double 0.0f
+	lower_limit_cubed: .double 0.0
     
-   	upper_limit: .double 0.001
-	upper_limit_cubed: .double 0.000000001f
-    
+   	upper_limit: .double 0.0001
+	upper_limit_cubed: .double 0.000000000001
 
 	root_aprox: .double 0.0
    	root_aprox_cubed: .double 0.0
 
 	cubic_pow: .double 0.0 # numb ^ 3
    	estimate: .double 0.0  #estimate error
+
+	max_error: .double 0.000000000001
 
    	constant0: .double 0.0
 	constant1: .double 1.0
@@ -39,7 +40,7 @@ main:
 	l.d $f0, numb # pass n as arg check_double
 	jal check_double
 	jal calc_raiz
-	jal calc_erro
+	jal calc_error
 	jal imprime_saida
 	jal exit_prog
 	
@@ -146,11 +147,14 @@ calc_raiz:
 	end_loop_find_limits:
 		# exit loop_find_limits
 
-		li $t1, 0 # t1 = i = 0
-		li $t2, 10 # t2 = iterations = 10
+		li $s1, 0 # s1 = i = 0
+		li $s2, 1000 # s2 = iterations = 1000
+
+		# now: f4 = max_error
+		l.d $f4, max_error # f4 = max_error
 
 	loop_find_root:
-		# for (int i = 0; i < iterations; i++)
+		# while (calc_error(root_approx, d) > 0.000000000001 && i < iterations)
 	
 		add.d $f14, $f6, $f10 # root_aprox = lower_limit + upper_limit
 		div.d $f14, $f14, $f2 # root_aprox = root_aprox / 2
@@ -173,20 +177,35 @@ calc_raiz:
 
 		end_elseif_find_root:
 
-		addi $t1, $t1, 1 # i++
-		beq $t1, $t2, end_loop_find_root # if i == iterations then finish loop
+		# while (calc_error(root_approx, d) > 0.000000000001 && i < iterations)
+
+		# i < iterations
+		addi $s1, $s1, 1 # i++
+		beq $s1, $s2, end_loop_find_root # if i == iterations then finish loop
 		
+		# calc_error(root_approx, d) > 0.000000000001
+		s.d $f14, result_numb
+		add $s4, $zero, $ra
+		jal calc_error
+		add $ra, $zero, $s4
+
+		l.d $f18, estimate # f18 = estimated error
+		c.lt.d $f18, $f4 # if estimated error < max error
+		bc1t end_loop_find_root # then exit loop (while condition)
+		
+		j loop_find_root
+
 	end_loop_find_root:
 
 	s.d $f14, result_numb
 
 	jr $ra
     
-calc_erro:
+calc_error:
 
-	#f0 f20 = numb
-	#f1 f22 = result_numb
-	#f2 f24 = estimate
+	#f20 = numb
+	#f22 = result_numb
+	#f24 = estimate
 
 	l.d $f20, numb
 	l.d $f22, result_numb
