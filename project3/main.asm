@@ -4,27 +4,27 @@
 .data
 	error: .asciiz "Out of Range"
 
-	numb: .float 0.0  #the value
-	result_numb: .float 0.0 # the cubic root of 'numb'
+	numb: .double 0.0  #the value
+	result_numb: .double 0.0 # the cubic root of 'numb'
 	
-	step: .float 0.001f
+	step: .double 0.001f
 
-	lower_limit: .float 0.0
-    	lower_limit_cubed: .float 0.0f
+	lower_limit: .double 0.0
+	lower_limit_cubed: .double 0.0f
     
-   	upper_limit: .float 0.001
-	upper_limit_cubed: .float 0.000000001f
+   	upper_limit: .double 0.001
+	upper_limit_cubed: .double 0.000000001f
     
 
-	root_aprox: .float 0.0
-   	root_aprox_cubed: .float 0.0
+	root_aprox: .double 0.0
+   	root_aprox_cubed: .double 0.0
 
-	cubic_pow: .float 0.0 # numb ^ 3
-   	estimate: .float 0.0  #estimate error
+	cubic_pow: .double 0.0 # numb ^ 3
+   	estimate: .double 0.0  #estimate error
 
-   	constant0: .float 0.0
-    	constant1: .float 1.0
-	constant2: .float 2.0
+   	constant0: .double 0.0
+	constant1: .double 1.0
+	constant2: .double 2.0
 
 	result1: .asciiz "A raiz cubica eh "
 	result2: .asciiz ". O erro estimado eh de "
@@ -33,31 +33,34 @@
 	
 main:
 	
-	jal le_float 
-	s.s $f0, numb # save return in 'numb'
+	jal le_double 
+	s.d $f0, numb # save return in 'numb'
 	
-	lwc1 $f0, numb # pass n as arg check_float
-	jal check_float
+	l.d $f0, numb # pass n as arg check_double
+	jal check_double
 	jal calc_raiz
 	jal calc_erro
 	jal imprime_saida
 	jal exit_prog
 	
 	
-check_float:
-	# if (x > 0) return float
-	# if (x <= 1) return float
+check_double:
+	# if (x > 0) return double
+	# if (x <= 1) return double
 	
-	l.s $f1, constant0 # 0
-	l.s $f2, constant1 # 1
+	#f1 f2 = const0
+	#f2 f4 const1
+
+	l.d $f2, constant0 # 0
+	l.d $f4, constant1 # 1
 	
 	greater_than_zero:
-		c.lt.s $f1, $f0 # check if 0 < numb 
+		c.lt.d $f2, $f0 # check if 0 < numb 
 		bc1t less_than_one # if true jump next test
 		bc1f not_in_range #if false jump not_in_range
 	
 	less_than_one:
-		c.le.s $f0, $f2 # check if x <= 1
+		c.le.d $f0, $f4 # check if x <= 1
 		bc1t in_range # if true jump in_range
 		bc1f not_in_range # if false jump not_in_range
 	
@@ -72,8 +75,8 @@ check_float:
 			jr $ra #return var
 					
 	
-le_float:
-	li $v0, 6 # syscall to read float
+le_double:
+	li $v0, 7 # syscall to read double
 	syscall
 	
 	jr $ra
@@ -87,56 +90,57 @@ calc_raiz:
 
 	# f2 = constant2 = 2.0
 
-	# f5 = lower_limit
-	# f6 = lower_limit_cubed
-
-	# f7 = upper_limit
-	# f8 = upper_limit_cubed
-
-	# f9 = root_aprox
-	# f10 = root_aprox_cubed
-    
 	# f4 = step
-
-	lwc1 $f0, numb
-
-	lwc1 $f2, constant2
 	
-	lwc1 $f4, step # step = 0.001f
+	# f6 = lower_limit
+	# f8 = lower_limit_cubed
 
-	lwc1 $f5, lower_limit 
-	lwc1 $f6, lower_limit_cubed
+	# f10 = upper_limit
+	# f12 = upper_limit_cubed
 
-	lwc1 $f7, upper_limit 
-	lwc1 $f8, upper_limit_cubed
+	# f14 = root_aprox
+	# f16 = root_aprox_cubed   
 
-	lwc1 $f9,  root_aprox 
-	lwc1 $f10, root_aprox_cubed
 
-  	# we want to find when lower_limit_cubed < lower_limit < upper_limit_cubed
+	l.d $f0, numb
 
-	# lower_limit_cubed < lower_limit && lower_limit < upper_limit_cubed
-	c.lt.s $f6, $f0 # lower_limit_cubed < numb
+	l.d $f2, constant2
+	
+	l.d $f4, step # step = 0.001f
+
+	l.d $f6, lower_limit 
+	l.d $f8, lower_limit_cubed
+
+	l.d $f10, upper_limit 
+	l.d $f12, upper_limit_cubed
+
+	l.d $f14,  root_aprox 
+	l.d $f16, root_aprox_cubed
+
+  	# we want to find when lower_limit_cubed < numb < upper_limit_cubed
+
+	# lower_limit_cubed < numb && numb < upper_limit_cubed
+	c.lt.d $f8, $f0 # lower_limit_cubed < numb
 	bc1f loop_find_limits
-	c.lt.s $f0, $f8 # numb < upper_limit_cubed
+	c.lt.d $f0, $f12 # numb < upper_limit_cubed
 	bc1t end_loop_find_limits
 
 	loop_find_limits:
 
-		mov.s $f5, $f7 # lower_limit = upper_limit
-		add.s $f7, $f7, $f4 # upper_limit += upper_limit
+		mov.d $f6, $f10 # lower_limit = upper_limit
+		add.d $f10, $f10, $f4 # upper_limit += step
 
 		# lower_limit_cubed = lower_limit * lower_limit * lower_limit = lower_limit^3
-		mul.s $f6, $f5, $f5 
-		mul.s $f6, $f6, $f5
+		mul.d $f8, $f6, $f6 
+		mul.d $f8, $f8, $f6
 
 		# upper_limit_cubed = upper_limit * upper_limit * upper_limit= upper_limit^3
-		mul.s $f8, $f7, $f7 
-		mul.s $f8, $f8, $f7
+		mul.d $f12, $f10, $f10 
+		mul.d $f12, $f12, $f10
 
-		c.lt.s $f6, $f0 # lower_limit_cubed < numb
+		c.lt.d $f8, $f0 # lower_limit_cubed < numb
 		bc1f loop_find_limits
-		c.lt.s $f0, $f8 # numb < upper_limit_cubed
+		c.lt.d $f0, $f12 # numb < upper_limit_cubed
 		bc1f loop_find_limits
 
 	end_loop_find_limits:
@@ -148,24 +152,24 @@ calc_raiz:
 	loop_find_root:
 		# for (int i = 0; i < iterations; i++)
 	
-		add.s $f9, $f5, $f7 # root_aprox = lower_limit + upper_limit
-		div.s $f9, $f9, $f2 # root_aprox = root_aprox / 2
+		add.d $f14, $f6, $f10 # root_aprox = lower_limit + upper_limit
+		div.d $f14, $f14, $f2 # root_aprox = root_aprox / 2
 
 		# root_aprox_cubed = root_aprox * root_aprox * root_aprox = root_aprox^3
-		mul.s $f10, $f9, $f9
-		mul.s $f10, $f10, $f9
+		mul.d $f16, $f14, $f14
+		mul.d $f16, $f16, $f14
 
 		# if root_aprox_cubed < numb
-		c.lt.s $f10, $f0
+		c.lt.d $f16, $f0
 		bc1f elseif_find_root
-		mov.s $f5, $f9 # lower_limit = root_aprox
+		mov.d $f6, $f14 # lower_limit = root_aprox
 		j end_elseif_find_root
 		
 		elseif_find_root:
 		# else if numb < root_aprox_cubed
-			c.lt.s $f0, $f10
+			c.lt.d $f0, $f16
 			bc1f end_elseif_find_root
-			mov.s $f7, $f9 # upper_limit = root_aprox
+			mov.d $f10, $f14 # upper_limit = root_aprox
 
 		end_elseif_find_root:
 
@@ -174,33 +178,29 @@ calc_raiz:
 		
 	end_loop_find_root:
 
-	s.s $f9, result_numb
-
-	jr $ra
-    
-    
-cubic_power:
-	lwc1 $f2, numb
-
-	mul.s $f1, $f2, $f2
-	mul.s $f1, $f0, $f1 # cubic_numb = numb * numb *numb
+	s.d $f14, result_numb
 
 	jr $ra
     
 calc_erro:
-	lwc1 $f0, numb
-	lwc1 $f1, result_numb
-	lwc1 $f2, estimate
 
-	# f3 = result_numb ^ 3
-	mul.s $f3, $f1, $f1
-	mul.s $f3, $f3, $f1 # cubic_numb = numb * numb *numb
+	#f0 f20 = numb
+	#f1 f22 = result_numb
+	#f2 f24 = estimate
+
+	l.d $f20, numb
+	l.d $f22, result_numb
+	l.d $f24, estimate
+
+	#f3 f26 = result_numb ^ 3
+	mul.d $f26, $f22, $f22
+	mul.d $f26, $f26, $f22 # cubic_numb = numb * numb *numb
 
 	# error = numb - (result_num ^ 3)
-	sub.s $f2, $f0, $f3
-	abs.s $f2, $f2
+	sub.d $f24, $f20, $f26
+	abs.d $f24, $f24
 
-	s.s $f2, estimate
+	s.d $f24, estimate
 
 	jr $ra
 
@@ -211,9 +211,9 @@ imprime_saida:
 	li $v0, 4 # syscall to print string 
 	syscall
 	
-	lwc1 $f12, result_numb
+	l.d $f12, result_numb
 	
-	li $v0, 2 # syscall to print float
+	li $v0, 3 # syscall to print float
 	syscall
 	
 	la $a0, result2
@@ -221,9 +221,9 @@ imprime_saida:
 	li $v0, 4 # syscall to print string
 	syscall
 	
-	lwc1 $f12, estimate
+	l.d $f12, estimate
 	
-	li $v0, 2 # syscall to print float
+	li $v0, 3 # syscall to print float
 	syscall
 	
 	la $a0, result3
